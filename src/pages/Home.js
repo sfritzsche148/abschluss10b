@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { getDocs, collection, deleteDoc, doc } from "firebase/firestore";
-import { auth, db } from "../firebase-config";
+import { auth, db, storage } from "../firebase-config";
+import { useNavigate } from "react-router-dom";
 
 function Home({ isAuth }) {
   const [postLists, setPostList] = useState([]);
-  const postsCollectionRef = collection(db, "posts");
+
+
+  const postCollectionRef = collection(db, "post");
+  let navigate = useNavigate();
 
   useEffect(() => {
-    const getPosts = async () => {
-      const data = await getDocs(postsCollectionRef);
+    const getPost = async () => {
+      const data = await getDocs(postCollectionRef);
       setPostList(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     };
 
-    getPosts();
+    getPost();
   });
+
+  useEffect(() => {
+    if (!isAuth) {
+      navigate("/login");
+    }
+  }, []);
 
   return (
     <div className="homePage">
@@ -27,15 +37,12 @@ function Home({ isAuth }) {
             </div>
             <div className="postTextContainer"> {post.postText} </div>
             <div className="postTextContainer">
-              <img
-                src={post.postFile}
-                alt=''
-              />
+      
             </div>
-            <h3>@{post.author.name}</h3>
           </div>
         );
       })}
+      
     </div>
   );
 }

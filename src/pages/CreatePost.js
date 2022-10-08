@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { addDoc, collection } from "firebase/firestore";
-import { db, auth } from "../firebase-config";
+import { db, auth, storage } from "../firebase-config";
+import { ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
+import { v4 } from "uuid";
 import { useNavigate } from "react-router-dom";
 
 function CreatePost({ isAuth }) {
   const [title, setTitle] = useState("");
   const [postText, setPostText] = useState("");
-  const [postFile, setPostFile] = useState('');
+  const [imageUpload, setImageUpload] = useState(null);
+  const [imageList, setImageList] = useState([]);
+  const [imageUrls, setImageUrls] = useState([]);
 
-  const postsCollectionRef = collection(db, "posts");
+  const imageListRef = ref(storage, 'images/')
+
+  const postCollectionRef = collection(db, "post");
   let navigate = useNavigate();
 
   const createPost = async () => {
-    await addDoc(postsCollectionRef, {
+    await addDoc(postCollectionRef, {
       title,
       postText,
-      postFile,
       author: { name: auth.currentUser.displayName, id: auth.currentUser.uid },
     });
+    const imageRef = ref(storage, `images/${imageUpload.name + v4()}`);
+    uploadBytes(imageRef, imageUpload).then(() => {
+    })
     navigate("/");
   };
 
@@ -27,6 +35,16 @@ function CreatePost({ isAuth }) {
     }
   }, []);
 
+  useEffect(() => {
+    listAll(imageListRef).then((response) => {
+      response.items.forEach((item) => {
+        getDownloadURL(item).then((url) => {
+          setImageList((prev) => [...prev, url]);
+        })
+      })
+    })
+  }, [])
+ 
   return (
     <div className="createPostPage">
       <div className="cpContainer">
@@ -51,10 +69,8 @@ function CreatePost({ isAuth }) {
         </div>
         <div>
           <input 
+          onChange={(event) => {setImageUpload(event.target.files[0])}}
           type='file'
-          onChange={(event) => {
-            setPostFile(event.target.value);
-          }}
           />
         </div>
         <button onClick={createPost}> Submit Post</button>
