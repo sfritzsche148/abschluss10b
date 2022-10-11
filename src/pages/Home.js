@@ -1,48 +1,60 @@
-import React, { useEffect, useState } from "react";
-import { getDocs, collection, deleteDoc, doc } from "firebase/firestore";
-import { auth, db, storage } from "../firebase-config";
+import React, { useState, useEffect } from "react";
+import { db, auth, storage } from "../firebase-config";
+import { ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
+import { v4 } from "uuid";
 import { useNavigate } from "react-router-dom";
 
 function Home({ isAuth }) {
-  const [postLists, setPostList] = useState([]);
 
-
-  const postCollectionRef = collection(db, "post");
   let navigate = useNavigate();
-
-  useEffect(() => {
-    const getPost = async () => {
-      const data = await getDocs(postCollectionRef);
-      setPostList(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    };
-
-    getPost();
-  });
-
   useEffect(() => {
     if (!isAuth) {
       navigate("/login");
     }
   }, []);
 
+
+  const [imageUpload, setImageUpload] = useState(null);
+  const [imageUrls, setImageUrls] = useState([]);
+
+  const imagesListRef = ref(storage, "images/");
+  const uploadFile = () => {
+    if (imageUpload == null) return;
+    const imageRef = ref(storage, `images/${imageUpload.name + v4()}`);
+    uploadBytes(imageRef, imageUpload).then((snapshot) => {
+      getDownloadURL(snapshot.ref).then((url) => {
+        setImageUrls((prev) => [...prev, url]);
+      });
+    });
+  };
+
+  useEffect(() => {
+    listAll(imagesListRef).then((response) => {
+      response.items.forEach((item) => {
+        getDownloadURL(item).then((url) => {
+          setImageUrls((prev) => [...prev, url]);
+        });
+      });
+    });
+  }, []);
   return (
     <div className="homePage">
-      {postLists.map((post) => {
-        return (
-          <div className="post">
-            <div className="postHeader">
-              <div className="title">
-                <h1> {post.title}</h1>
-              </div>
-            </div>
-            <div className="postTextContainer"> {post.postText} </div>
-            <div className="postTextContainer">
-      
-            </div>
-          </div>
-        );
+      <div>
+      {imageUrls.map((url) => {
+        return <img src={url} />;
       })}
-      
+      </div>
+      <div className="createPostPage">
+      <div className="cpContainer">
+        <div>
+          <input 
+          onChange={(event) => {setImageUpload(event.target.files[0])}}
+          type='file'
+          />
+        </div>
+        <button onClick={uploadFile}>Submit Post</button>
+      </div>
+    </div>
     </div>
   );
 }
