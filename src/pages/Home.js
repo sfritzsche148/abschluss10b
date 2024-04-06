@@ -38,7 +38,11 @@ function Home({ isAuth }) {
     });
   }, []);
   return (
+
     <div className="homePage">
+      <video className="video" controls src={`${process.env.PUBLIC_URL}/Videos/AbschlussVideoTeil1.mp4`}/>
+      <video className="video" controls src={`${process.env.PUBLIC_URL}/Videos/AbschlussVideoTeil2.mp4`}/>
+      <video className="video" controls src={`${process.env.PUBLIC_URL}/Videos/AbschlussVideoTeil3.mp4`}/>
       <div>
       {imageUrls.map((url) => {
         return <img src={url} />;
